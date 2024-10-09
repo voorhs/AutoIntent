@@ -1,6 +1,7 @@
 import numpy as np
 
 from autointent import Context
+from autointent.context.data_handler import Dataset
 from autointent.metrics import retrieval_hit_rate_macro, scoring_f1
 from autointent.modules import VectorDBModule
 from autointent.modules.scoring.mlknn.mlknn import MLKnnScorer
@@ -12,23 +13,27 @@ def test_base_mlknn():
     run_name = get_run_name("multiclass-cpu")
     db_dir = get_db_dir("", run_name)
 
-    data = load_data("tests/minimal-optimization/data/clinc_subset.json", multilabel=False)
-    utterance = [
+    data = load_data("tests/minimal-optimization/data/clinc_subset_multilabel.json", multilabel=False)
+    dataset = Dataset.model_validate(data)
+    test_dataset = Dataset.model_validate(
         {
-            "utterance": "why is there a hold on my american saving bank account",
-            "labels": [0, 1, 2],
+            "utterances": [
+                {
+                    "text": "why is there a hold on my american saving bank account",
+                    "label": [0, 1, 2],
+                },
+                {
+                    "text": "i am nost sure why my account is blocked",
+                    "label": [0, 3],
+                },
+            ],
         },
-        {
-            "utterance": "i am nost sure why my account is blocked",
-            "labels": [0, 3],
-        },
-    ]
+    )
+
     context = Context(
-        multiclass_intent_records=data,
-        multilabel_utterance_records=utterance,
-        test_utterance_records=utterance,
+        dataset=dataset,
+        test_dataset=test_dataset,
         device="cpu",
-        mode="multiclass_as_multilabel",
         multilabel_generation_config="",
         db_dir=db_dir,
         regex_sampling=0,

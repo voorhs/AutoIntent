@@ -1,4 +1,5 @@
 from autointent import Context
+from autointent.context.data_handler import Dataset
 from autointent.pipeline import Pipeline
 from autointent.pipeline.main import get_db_dir, get_run_name, load_data, setup_logging
 
@@ -11,13 +12,13 @@ def test_multiclass():
     db_dir = get_db_dir("", run_name)
 
     # create shared objects for a whole pipeline
-    data = load_data("tests/minimal-optimization/data/clinc_subset.json", multilabel=False)
+    data = load_data("tests/minimal-optimization/data/clinc_subset_multiclass.json", multilabel=False)
+    dataset = Dataset.model_validate(data)
+
     context = Context(
-        multiclass_intent_records=data,
-        multilabel_utterance_records=[],
-        test_utterance_records=[],
+        dataset=dataset,
+        test_dataset=None,
         device="cpu",
-        mode="multiclass",
         multilabel_generation_config="",
         db_dir=db_dir,
         regex_sampling=0,
@@ -43,13 +44,13 @@ def test_multilabel():
     db_dir = get_db_dir("", run_name)
 
     # create shared objects for a whole pipeline
-    data = load_data("tests/minimal-optimization/data/clinc_subset.json", multilabel=False)
+    data = load_data("tests/minimal-optimization/data/clinc_subset_multilabel.json", multilabel=False)
+    dataset = Dataset.model_validate(data)
+
     context = Context(
-        multiclass_intent_records=data,
-        multilabel_utterance_records=[],
-        test_utterance_records=[],
+        dataset=dataset,
+        test_dataset=None,
         device="cpu",
-        mode="multiclass_as_multilabel",
         multilabel_generation_config="",
         db_dir=db_dir,
         regex_sampling=0,

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 from autointent import Context
+from autointent.context.data_handler import Dataset
 
 from .pipeline import Pipeline
 from .utils import generate_name, get_db_dir
@@ -99,12 +100,23 @@ def main():
     logger.debug("Chroma DB path: %s", db_dir)
 
     # create shared objects for a whole pipeline
+
+    # TODO check that at least one path is valid
+    if args.multiclass_path:
+        data = load_data(args.multiclass_path, multilabel=False)
+    else:
+        data = load_data(args.multilabel_path, multilabel=True)
+    dataset = Dataset.model_validate(data)
+
+    test_dataset = None
+    if args.test_path:
+        test_data = load_data(args.test_path)
+        test_dataset = Dataset.model_validate(test_data)
+
     context = Context(
-        load_data(args.multiclass_path, multilabel=False),
-        load_data(args.multilabel_path, multilabel=True),
-        load_data(args.test_path, multilabel=True),
+        dataset,
+        test_dataset,
         args.device,
-        args.mode,
         args.multilabel_generation_config,
         db_dir,
         args.regex_sampling,

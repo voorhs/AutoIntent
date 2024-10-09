@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import _safe_indexing, indexable
 from skmultilearn.model_selection import IterativeStratification
 
+from .schemas import Dataset, DatasetType
+
 
 def get_sample_utterances(intent_records: list[dict]):
     """get plain list of all sample utterances and their intent labels"""
@@ -18,16 +20,24 @@ def get_sample_utterances(intent_records: list[dict]):
     return utterances, labels
 
 
-def split_sample_utterances(intent_records: list[dict], test_records: list[dict], multilabel: bool, seed: int = 0):
+def split_sample_utterances(
+    dataset: Dataset,
+    test_dataset: Dataset | None = None,
+    random_seed: int = 0,
+) -> ...:
     """
     Return: n_classes, oos_utterances, utterances_train, utterances_test, labels_train, labels_test
     """
     logger = logging.getLogger(__name__)
 
+    multilabel = dataset.type == DatasetType.multilabel
+
+    utterances = [utterance.text for utterance in dataset.utterances]
+    labels = [utterance.label for utterance in dataset.utterances]
+
     if not multilabel:
         logger.debug("parsing multiclass intent records...")
 
-        utterances, labels = get_sample_utterances(intent_records)
         in_domain_mask = np.array(labels) != -1
 
         in_domain_utterances = [
@@ -42,11 +52,8 @@ def split_sample_utterances(intent_records: list[dict], test_records: list[dict]
     else:
         logger.debug("parsing multilabel utterance records...")
 
-        utterance_records = intent_records
-        utterances = [dct["utterance"] for dct in utterance_records]
-        labels = [dct["labels"] for dct in utterance_records]
-
-        n_classes = len(set(it.chain.from_iterable(labels)))
+        classes = set(it.chain.from_iterable(labels))
+        n_classes = len(classes) if -1 not in classes else len(classes) - 1
 
         in_domain_utterances = [ut for ut, lab in zip(utterances, labels, strict=False) if len(lab) > 0]
         in_domain_labels = [[int(i in lab) for i in range(n_classes)] for lab in labels if len(lab) > 0]
@@ -54,14 +61,14 @@ def split_sample_utterances(intent_records: list[dict], test_records: list[dict]
 
         splitter = multilabel_train_test_split
 
-    if not test_records:
+    if test_dataset is None:
         logger.debug("test utterances are not provided, using train test splitting...")
 
         splits = splitter(
             in_domain_utterances,
             in_domain_labels,
             test_size=0.25,
-            random_state=seed,
+            random_state=random_seed,
             stratify=in_domain_labels,
             shuffle=True,
         )
@@ -69,22 +76,27 @@ def split_sample_utterances(intent_records: list[dict], test_records: list[dict]
     else:
         logger.debug("parsing test utterance records...")
 
-        test_utterances = [dct["utterance"] for dct in test_records if len(dct["labels"]) > 0]
+        test_utterances = [
+            utterance.text
+            for utterance in test_dataset.utterances if len(utterance.label) > 0
+        ]
+
         if multilabel:
             test_labels = [
-                [int(i in dct["labels"]) for i in range(n_classes)] for dct in test_records if len(dct["labels"]) > 0
+                utterance.one_hot_label(n_classes)
+                for utterance in test_dataset.utterances if len(utterance.label) > 0
             ]
         else:
-            test_labels = [dct["labels"][0] for dct in test_records if len(dct["labels"]) > 0]
-            if any(len(dct["labels"]) > 1 for dct in test_records):
+            test_labels = [utterance.label[0] for utterance in test_dataset.utterance if len(utterance.label) > 0]
+            if any(len(utterance.label) > 1 for utterance in test_dataset.utterances):
                 logger.warning(
                     "you provided multilabel test data in multiclass classification mode, "
                     "all the labels except the first one in each list will be ignored"
                 )
 
-        for dct in test_records:
-            if len(dct["labels"]) == 0:
-                oos_utterances.append(dct["utterance"])
+        for utterance in dataset.utterances:
+            if len(utterance.label) == 0:
+                oos_utterances.append(utterance.text)
 
         splits = [in_domain_utterances, test_utterances, in_domain_labels, test_labels]
 

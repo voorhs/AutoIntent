@@ -6,21 +6,17 @@ from .vector_index import VectorIndex
 class Context:
     def __init__(
         self,
-        multiclass_intent_records,
-        multilabel_utterance_records,
-        test_utterance_records,
+        dataset,
+        test_dataset,
         device,
-        mode,
         multilabel_generation_config: str,
         db_dir,
         regex_sampling,
         seed,
     ) -> None:
         self.data_handler = DataHandler(
-            multiclass_intent_records,
-            multilabel_utterance_records,
-            test_utterance_records,
-            mode,
+            dataset,
+            test_dataset,
             multilabel_generation_config,
             regex_sampling,
             seed,
