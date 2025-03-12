@@ -24,7 +24,7 @@ class PTuningScorer(BasePEFTScorer):
         num_virtual_tokens: int = 20,
         encoder_reparameterization_type: str = "MLP",
         encoder_hidden_size: int = 128,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         super().__init__(**kwargs)
         self.num_virtual_tokens = num_virtual_tokens

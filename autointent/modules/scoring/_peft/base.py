@@ -81,7 +81,8 @@ class BasePEFTScorer(BaseScorer):
 
     def predict(self, utterances: list[str]) -> npt.NDArray[Any]:
         if not self._model or not self._tokenizer:
-            raise RuntimeError("Model not trained. Call fit() first.")
+            msg = "Model not trained. Call fit() first."
+            raise RuntimeError(msg)
 
         self._model.eval()
         inputs = self._tokenizer(utterances, padding=True, truncation=True, return_tensors="pt")
@@ -98,4 +99,5 @@ class BasePEFTScorer(BaseScorer):
         torch.cuda.empty_cache()
 
     def _create_model(self, num_labels: int) -> AutoModelForSequenceClassification:
-        raise NotImplementedError("Subclasses must implement this method")
+        msg = "Subclasses must implement this method"
+        raise NotImplementedError(msg)

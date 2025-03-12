@@ -21,7 +21,12 @@ class LoRAScorer(BasePEFTScorer):
     name = "lora"
 
     def __init__(
-        self, target_modules: list[str], r: int = 8, lora_alpha: int = 32, lora_dropout: float = 0.2, **kwargs: Any
+        self,
+        target_modules: list[str],
+        r: int = 8,
+        lora_alpha: int = 32,
+        lora_dropout: float = 0.2,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         super().__init__(**kwargs)
         self.target_modules = target_modules
